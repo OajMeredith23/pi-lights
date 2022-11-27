@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<head>
+   <title>RPi Web Server</title></head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .cluster {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1em;
+        }
+        button {
+            padding: 1em;
+            border: none;
+            background: lightblue;
+            border-radius: 1em;
+        }
+    </style>
+<body>
+    
+    
+    
+   <h1>{{mode}}</h1>
+   <div class="cluster">
+       <button data-mode="weather">&#9748; </button>
+       <button data-mode="fire">&#128293;</button>
+       <button data-mode="night">&#127761;</button>
+   </cluster>
+   
+   <script>
+       const buttons = document.querySelectorAll('button');
+       console.log(buttons)
+       
+       buttons.forEach(btn => {
+           
+           btn.addEventListener('click', (e) => {
+                e.preventDefault()
+                mode = btn.dataset.mode
+                console.log(btn, mode)
+                var searchParams = new URLSearchParams(window.location.search);
+                searchParams.set("mode", mode);
+                window.location.search = searchParams.toString();
+           })
+       })
+   </script>
+</body>
+</html>

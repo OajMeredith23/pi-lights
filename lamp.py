@@ -7,24 +7,12 @@ import math
 from datetime import datetime
 from time import time
 from time import sleep
-from dotenv import load_dotenv
-import os 
 from getweather import getWeather
 from weathereffect import weatherEffect
 from fire import fire
-
-load_dotenv()
-print(os.environ.get('weather_key'))
-weather_key = os.environ.get('weather_key')
-weather_url = "https://api.openweathermap.org/data/3.0/onecall?lat=51.07&lon=00.04&appid=" + weather_key
+from flask import Flask, render_template, request
 
 
-weather_data = requests.get(weather_url).json()
-
-weatherdata = getWeather()
-sunrise_time = weatherdata[0]
-sunset_time = weatherdata[1]
-mainweather = weatherdata[2]['main']
 
 neo_pin = board.D18
 pixel_width = 32
@@ -45,13 +33,14 @@ neo = PixelFramebuffer(
     rotation=0
     )
 
+mode = 0
+app = Flask(__name__)
 
+ 
+ 
 def dist(x1, y1, x2, y2):
     return ((x1 - x2)**2 + (y1 - y2)**2)**0.5
 
-inc = 1
-fadeupinc = 1
-chimeinc = 0
 def chime(chimeinc):
     
     wait = 0
@@ -67,64 +56,102 @@ def chime(chimeinc):
     
           
 
-                
-prev_minute = 0
-chime_time = 15
-chime_wait = 0
-chiming = False
-bedtime = 23
-pointx = 0
+  
 
-while True:
-    now = datetime.now()
-    curr_minute = now.minute
+def lights(mode):
+    weatherdata = getWeather()
+    sunrise_time = weatherdata[0]
+    sunset_time = weatherdata[1]
+    mainweather = weatherdata[2]['main']
     
     
-    isAfterSunrise = int(now.timestamp()) > sunrise_time
-    isAfterSunset = int(now.timestamp()) > sunset_time
-    isDaytime =  not isAfterSunset and  isAfterSunrise
-    isNighttime = now.hour >= bedtime and not isAfterSunrise
-    
-    # If the current time is a mod of `chime_time`, and has just switched to that time (runs once on time change)
-    if(not isNighttime and curr_minute % chime_time == 0):
-        chiming = True
-        if(now.second < 9):
-            chimeinc += 0.02
-            chime(chimeinc)
-        else:
-            chiming = False
-        if(curr_minute != prev_minute):
-            weatherdata = getWeather()
-            print(weatherdata)
-            sunrise_time = weatherdata[0]
-            sunset_time = weatherdata[1]
-            mainweather = weatherdata[2]['main']
-            fadeupinc=0
-            print("sunrise", sunrise_time, "sunset", sunset_time, "mainweather", mainweather)
-    
-    pointx += 0.1
-    inc += 0.02
-    if pointx > pixel_width:
-        pointx = 0
-    
-    
-    if(not isNighttime and not chiming):
-        if(isDaytime):
-            weatherEffect(neo, mainweather, fadeupinc, pointx)
+    inc = 1
+    fadeupinc = 1
+    chimeinc = 0
+
+    prev_minute = 0
+    chime_time = 15
+    chime_wait = 0
+    chiming = False
+    bedtime = 23
+    pointx = 0
+
+    while True:
+        print("MODE", mode)
+        now = datetime.now()
+        curr_minute = now.minute
         
-        if(isAfterSunset):
-            fire(neo, inc)
+        
+        isAfterSunrise = int(now.timestamp()) > sunrise_time
+        isAfterSunset = int(now.timestamp()) > sunset_time
+        isDaytime =  not isAfterSunset and  isAfterSunrise
+        isNighttime = now.hour >= bedtime and not isAfterSunrise
+        
+        # If the current time is a mod of `chime_time`, and has just switched to that time (runs once on time change)
+        if(not isNighttime and curr_minute % chime_time == 0):
+            chiming = True
+            if(now.second < 9):
+                chimeinc += 0.02
+                chime(chimeinc)
+            else:
+                chiming = False
+            if(curr_minute != prev_minute):
+                weatherdata = getWeather()
+                print(weatherdata)
+                sunrise_time = weatherdata[0]
+                sunset_time = weatherdata[1]
+                mainweather = weatherdata[2]['main']
+                fadeupinc=0
+                print("sunrise", sunrise_time, "sunset", sunset_time, "mainweather", mainweather)
+        
+        pointx += 0.1
+        inc += 0.02
+        if pointx > pixel_width:
+            pointx = 0
+        
+        
+        if(not isNighttime and not chiming):
+            if(isDaytime):
+                weatherEffect(neo, mainweather, fadeupinc, pointx)
             
-        if(fadeupinc <= pixel_width):
-            fadeupinc += 0.2
-            pointx = fadeupinc
+            if(isAfterSunset):
+                fire(neo, inc)
+                
+            if(fadeupinc <= pixel_width):
+                fadeupinc += 0.2
+                pointx = fadeupinc
+        
+        if(isNighttime):
+            neo.fill(0x000000)
+        
+        neo.display()
+        
+        
+        prev_minute = curr_minute
     
-    if(isNighttime):
-        neo.fill(0x000000)
-    
-    neo.display()
-    
-    
-    prev_minute = curr_minute
-    
-    
+
+app = Flask(__name__)
+
+
+@app.route('/', methods=['GET'])
+def index():
+    args = request.args
+    templateData = {
+      'mode' : args.get('mode')
+    }
+    args = request.args
+#     lights('index')
+    print("args", args.get('mode'))
+    return render_template('index.html', **templateData)
+# 
+# @app.route('/<page_name>/')
+# def render_static(page_name):
+#     templateData = {
+#       'mode' : page_name
+#     }
+# 
+#     lights(page_name)
+#     return render_template('index.html', **templateData)
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')
