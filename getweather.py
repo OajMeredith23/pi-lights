@@ -11,4 +11,5 @@ def getWeather():
     sunrise_time = weather_data['current']['sunrise']
     sunset_time = weather_data['current']['sunset']
     weather_next_hour = weather_data['hourly'][1]['weather'][0]
+    
     return [sunrise_time, sunset_time, weather_next_hour]

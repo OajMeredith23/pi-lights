@@ -3,7 +3,7 @@ from random import random
 pixel_width = 32
 pixel_height = 8
 
-maxbrightness = 255
+maxbrightness = 155
 
 def weatherEffect(neo, effect, fadeupinc, pointx):
     y = 4

@@ -1,3 +1,7 @@
+from perlin_noise import PerlinNoise 
+
+noise = PerlinNoise()
+
 pixel_width = 32
 pixel_height = 8
 
